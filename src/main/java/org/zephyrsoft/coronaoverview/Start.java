@@ -62,7 +62,8 @@ public class Start {
 					groupingBy(CsvEntry::getMeldedatum,
 						mapping(CsvEntry::getSiebenTagesInzidenzPro100000Einwohner, MoreCollectors.onlyElement()))));
 
-			StringBuilder output = new StringBuilder("<html><head><title>Corona-Overview</title></head><body>");
+			StringBuilder output = new StringBuilder(
+				"<html><head><title>Corona-Overview</title><meta charset=\"UTF-8\"></head><body>\n");
 			for (String location : locations) {
 				result.entrySet().stream()
 					.filter(e -> e.getKey().startsWith(location))
