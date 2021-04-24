@@ -150,7 +150,7 @@ public class Start {
 				.append("<br/>\n")
 				.append(strings.getString("data_sources"))
 				.append(
-					" <a href=\"https://www.niedersachsen.de/Coronavirus/aktuelle_lage_in_niedersachsen/\" target=\"_blank\">niedersachsen.de</a> / <a href=\"https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/nCoV_node.html\" target=\"_blank\">rki.de</a> ")
+					" <a href=\"https://www.niedersachsen.de/Coronavirus/aktuelle_lage_in_niedersachsen/\" target=\"_blank\">Landesgesundheitsamt Niedersachsen</a> / <a href=\"https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/nCoV_node.html\" target=\"_blank\">Robert-Koch-Institut</a> ")
 				.append(strings.getString("update_frequency"))
 				.append("</i></small></body>\n</html>");
 
