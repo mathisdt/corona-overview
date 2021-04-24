@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -38,7 +37,7 @@ public class Start {
 
 	private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("EEEE, dd.MM.yyyy");
 	private static final DateTimeFormatter DATE_TIME_FORMAT = DateTimeFormatter.ofPattern("EEEE, dd.MM.yyyy, HH:mm");
-	private static final NumberFormat NUMBER_FORMAT = DecimalFormat.getNumberInstance();
+	private static final NumberFormat NUMBER_FORMAT = NumberFormat.getNumberInstance();
 
 	static {
 		NUMBER_FORMAT.setMinimumFractionDigits(1);
@@ -100,8 +99,8 @@ public class Start {
 				output.append("<h3>")
 					.append(location)
 					.append("</h3>\n<table style=\"padding-left:20px\" onclick=\"details('")
-						.append(locationClass)
-						.append("')\">");
+					.append(locationClass)
+					.append("')\">");
 
 				AtomicInteger line = new AtomicInteger();
 
@@ -169,9 +168,9 @@ public class Start {
 			.build();
 
 		return csvReader.stream()
-			.filter(e -> locations.stream().anyMatch(loc -> e.getLandkreis().startsWith(loc)))
+			.filter(e -> locations.stream().filter(loc -> e.getLandkreis().contains(loc)).count() == 1)
 			.map(e -> new CsvEntry(e.getMeldedatum(),
-				locations.stream().filter(loc -> e.getLandkreis().contains(loc)).findAny().orElseThrow(),
+				locations.stream().filter(loc -> e.getLandkreis().contains(loc)).collect(MoreCollectors.onlyElement()),
 				e.getSiebenTagesInzidenzPro100000Einwohner()))
 			.collect(groupingBy(CsvEntry::getLandkreis,
 				groupingBy(CsvEntry::getMeldedatum,
@@ -181,8 +180,7 @@ public class Start {
 	private Map<String, Map<LocalDate, Double>> loadFromRkiDe(InputStream rkiDeStream) {
 		Map<String, Map<LocalDate, Double>> result = new HashMap<>();
 
-		try {
-			XSSFWorkbook wb = new XSSFWorkbook(rkiDeStream);
+		try (XSSFWorkbook wb = new XSSFWorkbook(rkiDeStream)) {
 			XSSFSheet sheet = wb.getSheet("LK_7-Tage-Inzidenz");
 
 			Map<Integer, LocalDate> colToDate = new HashMap<>();
@@ -209,8 +207,8 @@ public class Start {
 							colToDate.put(col, date);
 						}
 					}
-				} else if (locations.stream().anyMatch(loc -> cell1.contains(loc))) {
-					String landkreis = locations.stream().filter(loc -> cell1.contains(loc)).findAny().orElseThrow();
+				} else if (locations.stream().anyMatch(cell1::contains)) {
+					String landkreis = locations.stream().filter(cell1::contains).findAny().orElseThrow();
 					Map<LocalDate, Double> values = new HashMap<>();
 					for (int col = 3; col < row.getLastCellNum(); col++) {
 						Cell cell = row.getCell(col);
@@ -219,11 +217,12 @@ public class Start {
 							values.put(colToDate.get(col), value);
 						}
 					}
+					if (result.containsKey(landkreis)) {
+						throw new IllegalStateException("data already present for: " + landkreis);
+					}
 					result.put(landkreis, values);
 				}
 			}
-
-			wb.close();
 		} catch (IOException e) {
 			throw new IllegalStateException(e);
 		}
