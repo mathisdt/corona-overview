@@ -73,19 +73,24 @@ public class Start {
 
 			ResourceBundle strings = ResourceBundle.getBundle("strings");
 
-			StringBuilder output = new StringBuilder(
-				"<html>\n<head><title>Corona-Overview</title><meta charset=\"UTF-8\"><link rel=\"icon\" href=\"favicon.ico\">"
-					+ "<script type=\"text/javascript\">function details(classname) {\n"
-					+ " var el = document.getElementsByClassName(classname + \"m\");\n"
-					+ " for (var i = 0; i < el.length; i++) {\n"
-					+ "  el[i].style.display = \"none\";\n"
-					+ " }\n"
-					+ " el = document.getElementsByClassName(classname);\n"
-					+ " for (var i = 0; i < el.length; i++) {\n"
-					+ "  el[i].style.display = \"inherit\";\n"
-					+ " }\n"
-					+ "}</script>"
-					+ "</head>\n<body style=\"padding:30px;padding-left:60px\">\n");
+			StringBuilder output = new StringBuilder("""
+				<html>
+				<head>
+				  <title>Corona-Overview</title><meta charset="UTF-8">
+				  <link rel="icon" href="favicon.ico">
+				  <script type="text/javascript">function details(classname) {
+				    var el = document.getElementsByClassName(classname + "m");
+				    for (var i = 0; i < el.length; i++) {
+				         el[i].style.display = "none";
+				    }
+				    el = document.getElementsByClassName(classname);
+				    for (var i = 0; i < el.length; i++) {
+				      el[i].style.display = "inherit";
+				    }
+				  }</script>
+				</head>
+				<body style="padding:30px;padding-left:60px">
+				""");
 
 			List<LocalDate> datesToDisplay = new ArrayList<>();
 			for (int i = 0; i < DAYS; i++) {
@@ -139,8 +144,12 @@ public class Start {
 				.append("<br/>\n")
 				.append(strings.getString("data_source"))
 				.append(
-					" <a href=\"https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/nCoV_node.html\" target=\"_blank\">Robert-Koch-Institut</a>")
-				.append("</i></small></body>\n</html>");
+					"""
+						<a href="https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/nCoV_node.html" target="_blank">Robert-Koch-Institut</a>
+						</i></small>
+						</body>
+						</html>
+						""");
 
 			System.out.println(output.toString());
 
@@ -161,8 +170,8 @@ public class Start {
 			while (sheet == null && sheetIterator.hasNext()) {
 				Sheet toTest = sheetIterator.next();
 				if (toTest.getSheetName().contains("LK_7-Tage-Inzidenz")
-					&& toTest instanceof XSSFSheet) {
-					sheet = (XSSFSheet) toTest;
+					&& toTest instanceof XSSFSheet s) {
+					sheet = s;
 				}
 			}
 
