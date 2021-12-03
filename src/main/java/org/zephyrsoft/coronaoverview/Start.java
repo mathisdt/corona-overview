@@ -134,7 +134,9 @@ public class Start {
 						.append(">")
 						.append("<td style=\"padding-right:25px;text-align:right\">")
 						.append(line.get() > 0 ? "" : "<b>")
-						.append("<span title=\"Fallinzidenz des RKI (pro Landkreis bzw. Stadt berechnet)\">")
+						.append("<span title=\"")
+						.append(strings.getString("case_incidence"))
+						.append("\">")
 						.append(fallinzidenz.get(day) == null
 							? "?"
 							: INCIDENCE_NUMBER_FORMAT.format(fallinzidenz.get(day)))
@@ -142,24 +144,29 @@ public class Start {
 						.append(line.get() > 0 ? "" : "</b>")
 						.append("</td><td style=\"padding-right:25px;text-align:right\">")
 						.append(line.get() > 0 ? "" : "<b>")
-						.append("<span title=\"Hospitalisierungsinzidenz des Landes Niedersachsen\">H<sub>NDS</sub>: ")
+						.append("<span title=\"")
+						.append(strings.getString("hospitalization_incidence_nds"))
+						.append("\">H<small><sub>NDS</sub></small>: ")
 						.append(ndsData.get(day) == null
 							? "?"
 							: INCIDENCE_NUMBER_FORMAT.format(ndsData.get(day).hospitalisationIncidence()))
 						.append("</span>")
 						.append(line.get() > 0 ? "" : "</b>")
-						.append("</td><td style=\"padding-right:25px;text-align:right; color:#909090\">")
+						.append("</td><td style=\"padding-right:25px;text-align:right; color:#A0A0A0\">")
 						.append(line.get() > 0 ? "" : "<b>")
-						.append(
-							"<i><span title=\"Hospitalisierungsinzidenz des RKI (pro Bundesland berechnet)\">H<sub>RKI</sub>: ")
+						.append("<span title=\"")
+						.append(strings.getString("hospitalization_incidence_rki"))
+						.append("\">H<small><sub>RKI</sub></small>: ")
 						.append(rkiHospitalisierungNiedersachsen.get(day) == null
 							? "?"
 							: INCIDENCE_NUMBER_FORMAT.format(rkiHospitalisierungNiedersachsen.get(day)))
-						.append("</span></i>")
+						.append("</span>")
 						.append(line.get() > 0 ? "" : "</b>")
 						.append("</td><td style=\"padding-right:25px;text-align:right\">")
 						.append(line.get() > 0 ? "" : "<b>")
-						.append("<span title=\"Krankenhausbelegung mit Covid-Patienten in Niedersachsen\">K: ")
+						.append("<span title=\"")
+						.append(strings.getString("intensive_care_beds_percentage_nds"))
+						.append("\">K: ")
 						.append(ndsData.get(day) == null
 							? "?"
 							: INCIDENCE_NUMBER_FORMAT.format(ndsData.get(day).intensiveCaseBedsPercentage()) + " %")
@@ -187,9 +194,11 @@ public class Start {
 				.append(strings.getString("oclock"))
 				.append("<br/>\n")
 				.append(strings.getString("data_source"))
+				.append(" ")
 				.append(
 					"""
-						<a href="https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/nCoV_node.html" target="_blank">Robert-Koch-Institut</a>
+						<a href="https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/nCoV_node.html" target="_blank">Robert-Koch-Institut</a> /
+						<a href="https://www.ms.niedersachsen.de/startseite/gesundheit_pflege/gesundheit/krankenhauser/krankenhausplanung/krankenhauser_nach_21/krankenhauser-nach-21-krankenhausfinanzierungsgesetz-khg-195705.html" target="_blank">Land Niedersachsen</a>
 						</i></small>
 						</body>
 						</html>
