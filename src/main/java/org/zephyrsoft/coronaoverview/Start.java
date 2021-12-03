@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -29,6 +30,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.opencsv.CSVParser;
+import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.exceptions.CsvValidationException;
@@ -37,8 +40,8 @@ public class Start {
 
 	private static final int DAYS = 10;
 
-	private static final DateTimeFormatter RKI_EXCEL_INPUT_DATE_FORMAT = DateTimeFormatter.ofPattern("dd.MM.yyyy");
-	private static final DateTimeFormatter RKI_CSV_INPUT_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+	private static final DateTimeFormatter DATE_FORMAT_DMY = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+	private static final DateTimeFormatter DATE_FORMAT_YMD = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
 	private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("EEEE, dd.MM.yyyy");
 	private static final DateTimeFormatter DATE_TIME_FORMAT = DateTimeFormatter.ofPattern("EEEE, dd.MM.yyyy, HH:mm");
@@ -69,16 +72,21 @@ public class Start {
 	}
 
 	private void doWork() {
-		try (InputStream fallinzidenzStream = new URL(
+		try (InputStream rkiFallinzidenzStream = new URL(
 			"https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/Daten/Fallzahlen_Kum_Tab.xlsx?__blob=publicationFile")
 				.openStream();
-			InputStream hospitalisierungStream = new URL(
+			InputStream rkiHospitalisierungStream = new URL(
 				"https://raw.githubusercontent.com/robert-koch-institut/COVID-19-Hospitalisierungen_in_Deutschland/master/Aktuell_Deutschland_COVID-19-Hospitalisierungen.csv")
+					.openStream();
+			InputStream ndsHospitalisierungStream = new URL(
+				"https://www.ms.niedersachsen.de/download/177306/CSV-Tabelle.csv")
 					.openStream()) {
 
-			Map<String, Map<LocalDate, Double>> fallinzidenzProOrt = loadFallinzidenzProOrt(fallinzidenzStream);
-			Map<LocalDate, Double> hospitalisierungNiedersachsen = loadHospitalisierungsinzidenzNiedersachsen(
-				hospitalisierungStream);
+			Map<String, Map<LocalDate, Double>> rkiFallinzidenzProOrt = loadRkiFallinzidenzProOrt(
+				rkiFallinzidenzStream);
+			Map<LocalDate, Double> rkiHospitalisierungNiedersachsen = loadRkiHospitalisierungsinzidenzNiedersachsen(
+				rkiHospitalisierungStream);
+			Map<LocalDate, Indicators> ndsData = loadNdsData(ndsHospitalisierungStream);
 
 			ResourceBundle strings = ResourceBundle.getBundle("strings");
 
@@ -117,7 +125,7 @@ public class Start {
 
 				AtomicInteger line = new AtomicInteger();
 
-				Map<LocalDate, Double> fallinzidenz = fallinzidenzProOrt.get(location);
+				Map<LocalDate, Double> fallinzidenz = rkiFallinzidenzProOrt.get(location);
 
 				for (LocalDate day : datesToDisplay) {
 					output.append("<tr")
@@ -126,18 +134,37 @@ public class Start {
 						.append(">")
 						.append("<td style=\"padding-right:25px;text-align:right\">")
 						.append(line.get() > 0 ? "" : "<b>")
-						.append("<span title=\"Fallinzidenz (pro Landkreis bzw. Stadt berechnet)\">")
+						.append("<span title=\"Fallinzidenz des RKI (pro Landkreis bzw. Stadt berechnet)\">")
 						.append(fallinzidenz.get(day) == null
 							? "?"
 							: INCIDENCE_NUMBER_FORMAT.format(fallinzidenz.get(day)))
 						.append("</span>")
 						.append(line.get() > 0 ? "" : "</b>")
 						.append("</td><td style=\"padding-right:25px;text-align:right\">")
-						.append("<span title=\"Hospitalisierungsinzidenz (pro Bundesland berechnet)\">H: ")
-						.append(hospitalisierungNiedersachsen.get(day) == null
+						.append(line.get() > 0 ? "" : "<b>")
+						.append("<span title=\"Hospitalisierungsinzidenz des Landes Niedersachsen\">H<sub>NDS</sub>: ")
+						.append(ndsData.get(day) == null
 							? "?"
-							: INCIDENCE_NUMBER_FORMAT.format(hospitalisierungNiedersachsen.get(day)))
+							: INCIDENCE_NUMBER_FORMAT.format(ndsData.get(day).hospitalisationIncidence()))
 						.append("</span>")
+						.append(line.get() > 0 ? "" : "</b>")
+						.append("</td><td style=\"padding-right:25px;text-align:right; color:#909090\">")
+						.append(line.get() > 0 ? "" : "<b>")
+						.append(
+							"<i><span title=\"Hospitalisierungsinzidenz des RKI (pro Bundesland berechnet)\">H<sub>RKI</sub>: ")
+						.append(rkiHospitalisierungNiedersachsen.get(day) == null
+							? "?"
+							: INCIDENCE_NUMBER_FORMAT.format(rkiHospitalisierungNiedersachsen.get(day)))
+						.append("</span></i>")
+						.append(line.get() > 0 ? "" : "</b>")
+						.append("</td><td style=\"padding-right:25px;text-align:right\">")
+						.append(line.get() > 0 ? "" : "<b>")
+						.append("<span title=\"Krankenhausbelegung mit Covid-Patienten in Niedersachsen\">K: ")
+						.append(ndsData.get(day) == null
+							? "?"
+							: INCIDENCE_NUMBER_FORMAT.format(ndsData.get(day).intensiveCaseBedsPercentage()) + " %")
+						.append("</span>")
+						.append(line.get() > 0 ? "" : "</b>")
 						.append("</td><td style=\"color:#606060\"><small>")
 						.append(DATE_FORMAT.format(day))
 						.append("</small></td></tr>\n");
@@ -175,7 +202,30 @@ public class Start {
 		}
 	}
 
-	private Map<LocalDate, Double> loadHospitalisierungsinzidenzNiedersachsen(final InputStream inputStream) {
+	private Map<LocalDate, Indicators> loadNdsData(final InputStream inputStream) {
+		Map<LocalDate, Indicators> result = new HashMap<>();
+
+		CSVParser parser = new CSVParserBuilder().withSeparator(';').build();
+
+		// Daten Stand, jeweils 09:00 Uhr;Inzidenz;Hospitalisierung;Intensivbetten in %
+		try (CSVReader csvReader = new CSVReaderBuilder(new InputStreamReader(inputStream))
+			.withCSVParser(parser).withSkipLines(1).build()) {
+			NumberFormat format = NumberFormat.getInstance(Locale.GERMAN);
+			String[] line;
+			while ((line = csvReader.readNext()) != null) {
+				Indicators ind = new Indicators(format.parse(line[1]).doubleValue(),
+					format.parse(line[2]).doubleValue(),
+					format.parse(line[3]).doubleValue());
+				result.put(LocalDate.parse(line[0], DATE_FORMAT_DMY), ind);
+			}
+		} catch (Exception e) {
+			throw new RuntimeException("problem while loading lower saxony data", e);
+		}
+
+		return result;
+	}
+
+	private Map<LocalDate, Double> loadRkiHospitalisierungsinzidenzNiedersachsen(final InputStream inputStream) {
 		Map<LocalDate, Double> result = new HashMap<>();
 
 		// Datum,Bundesland,Bundesland_Id,Altersgruppe,7T_Hospitalisierung_Faelle,7T_Hospitalisierung_Inzidenz
@@ -183,9 +233,9 @@ public class Start {
 			String[] line;
 			while ((line = csvReader.readNext()) != null) {
 				if (line.length >= 6
-					&& line[1].equalsIgnoreCase("Niedersachsen")
-					&& line[3].equalsIgnoreCase("00+")) {
-					result.put(LocalDate.parse(line[0], RKI_CSV_INPUT_DATE_FORMAT), Double.valueOf(line[5]));
+					&& line[1].trim().equalsIgnoreCase("Niedersachsen")
+					&& line[3].trim().equalsIgnoreCase("00+")) {
+					result.put(LocalDate.parse(line[0], DATE_FORMAT_YMD), Double.valueOf(line[5].trim()));
 				}
 			}
 		} catch (IOException | CsvValidationException e) {
@@ -195,7 +245,7 @@ public class Start {
 		return result;
 	}
 
-	private Map<String, Map<LocalDate, Double>> loadFallinzidenzProOrt(final InputStream inputStream) {
+	private Map<String, Map<LocalDate, Double>> loadRkiFallinzidenzProOrt(final InputStream inputStream) {
 		Map<String, Map<LocalDate, Double>> result = new HashMap<>();
 
 		LocalDate today = LocalDate.now();
@@ -229,7 +279,7 @@ public class Start {
 							Cell cell = row.getCell(col);
 							if (cell != null && cell.getCellType() == CellType.STRING) {
 								colToDate.put(col,
-									LocalDate.from(RKI_EXCEL_INPUT_DATE_FORMAT.parse(cell.getStringCellValue())));
+									LocalDate.from(DATE_FORMAT_DMY.parse(cell.getStringCellValue())));
 							} else if (cell != null && cell.getCellType() == CellType.NUMERIC) {
 								LocalDate date = cell.getDateCellValue()
 									.toInstant()
