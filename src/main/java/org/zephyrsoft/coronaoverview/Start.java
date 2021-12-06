@@ -222,6 +222,9 @@ public class Start {
 			NumberFormat format = NumberFormat.getInstance(Locale.GERMAN);
 			String[] line;
 			while ((line = csvReader.readNext()) != null) {
+				if (line.length == 1 && line[0].contains("\t")) {
+					line = line[0].split("\t+");
+				}
 				Indicators ind = new Indicators(format.parse(line[1]).doubleValue(),
 					format.parse(line[2]).doubleValue(),
 					format.parse(line[3]).doubleValue());
