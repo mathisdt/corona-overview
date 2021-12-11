@@ -73,7 +73,7 @@ public class Start {
 
 	private void doWork() {
 		try (InputStream rkiFallinzidenzStream = new URL(
-			"https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/Daten/Fallzahlen_Kum_Tab.xlsx?__blob=publicationFile")
+			"https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/Daten/Fallzahlen_Inzidenz_aktualisiert.xlsx?__blob=publicationFile")
 				.openStream();
 			InputStream rkiHospitalisierungStream = new URL(
 				"https://raw.githubusercontent.com/robert-koch-institut/COVID-19-Hospitalisierungen_in_Deutschland/master/Aktuell_Deutschland_COVID-19-Hospitalisierungen.csv")
@@ -268,7 +268,7 @@ public class Start {
 			Iterator<Sheet> sheetIterator = wb.sheetIterator();
 			while (sheet == null && sheetIterator.hasNext()) {
 				Sheet toTest = sheetIterator.next();
-				if (toTest.getSheetName().contains("LK_7-Tage-Inzidenz")
+				if (toTest.getSheetName().contains("LK_7-Tage-Inzidenz-aktualisiert")
 					&& toTest instanceof XSSFSheet s) {
 					sheet = s;
 				}
@@ -277,17 +277,17 @@ public class Start {
 			if (sheet != null) {
 				Map<Integer, LocalDate> colToDate = new HashMap<>();
 				for (Row row : sheet) {
-					if (row.getCell(1) == null || row.getCell(2) == null) {
+					if (row.getCell(0) == null || row.getCell(1) == null) {
 						continue;
 					}
-					String cell1 = row.getCell(1).getStringCellValue();
-					String cell2 = row.getCell(2).getCellType() == CellType.STRING
-						? row.getCell(2).getStringCellValue()
-						: (row.getCell(2).getCellType() == CellType.NUMERIC
-							? ID_NUMBER_FORMAT.format(row.getCell(2).getNumericCellValue())
+					String cellLkNr = row.getCell(0).getCellType() == CellType.STRING
+						? row.getCell(0).getStringCellValue()
+						: (row.getCell(0).getCellType() == CellType.NUMERIC
+							? ID_NUMBER_FORMAT.format(row.getCell(0).getNumericCellValue())
 							: "");
-					if (cell1.equals("LK") && cell2.equals("LKNR")) {
-						for (int col = 3; col < row.getLastCellNum(); col++) {
+					String cellLkName = row.getCell(1).getStringCellValue();
+					if (cellLkNr.equals("IdMeldeLandkreis") && cellLkName.equals("MeldeLandkreis")) {
+						for (int col = 2; col < row.getLastCellNum(); col++) {
 							Cell cell = row.getCell(col);
 							if (cell != null && cell.getCellType() == CellType.STRING) {
 								colToDate.put(col,
@@ -300,10 +300,10 @@ public class Start {
 								colToDate.put(col, date);
 							}
 						}
-					} else if (locations.stream().anyMatch(cell1::contains)) {
-						String landkreis = locations.stream().filter(cell1::contains).findAny().orElseThrow();
+					} else if (locations.stream().anyMatch(cellLkName::contains)) {
+						String landkreis = locations.stream().filter(cellLkName::contains).findAny().orElseThrow();
 						Map<LocalDate, Double> values = new HashMap<>();
-						for (int col = 3; col < row.getLastCellNum(); col++) {
+						for (int col = 2; col < row.getLastCellNum(); col++) {
 							Cell cell = row.getCell(col);
 							if (cell != null) {
 								Double value = cell.getNumericCellValue();
