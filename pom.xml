@@ -27,7 +27,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<main.class>org.zephyrsoft.coronaoverview.Start</main.class>
 
-		<version.log4j2>2.15.0</version.log4j2>
+		<version.log4j2>2.16.0</version.log4j2>
 	</properties>
 
 	<dependencyManagement>
