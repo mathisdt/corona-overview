@@ -79,7 +79,7 @@ public class Start {
 				"https://raw.githubusercontent.com/robert-koch-institut/COVID-19-Hospitalisierungen_in_Deutschland/master/Aktuell_Deutschland_COVID-19-Hospitalisierungen.csv")
 					.openStream();
 			InputStream ndsHospitalisierungStream = new URL(
-				"https://www.ms.niedersachsen.de/download/177306/CSV-Tabelle.csv")
+				"https://www.ms.niedersachsen.de/download/179174/CSV-Tabelle.csv")
 					.openStream()) {
 
 			Map<String, Map<LocalDate, Double>> rkiFallinzidenzProOrt = loadRkiFallinzidenzProOrt(
