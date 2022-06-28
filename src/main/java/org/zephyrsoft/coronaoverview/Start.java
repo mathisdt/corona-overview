@@ -40,6 +40,8 @@ public class Start {
 
 	private static final int DAYS = 10;
 
+	private static final NumberFormat NUMBER_FORMAT = NumberFormat.getInstance(Locale.GERMAN);
+
 	private static final DateTimeFormatter DATE_FORMAT_DMY = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 	private static final DateTimeFormatter DATE_FORMAT_YMD = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
@@ -219,15 +221,14 @@ public class Start {
 		// Daten Stand, jeweils 09:00 Uhr;Inzidenz;Hospitalisierung;Intensivbetten in %
 		try (CSVReader csvReader = new CSVReaderBuilder(new InputStreamReader(inputStream))
 			.withCSVParser(parser).withSkipLines(1).build()) {
-			NumberFormat format = NumberFormat.getInstance(Locale.GERMAN);
 			String[] line;
 			while ((line = csvReader.readNext()) != null) {
 				if (line.length == 1 && line[0].contains("\t")) {
 					line = line[0].split("\t+");
 				}
-				Indicators ind = new Indicators(format.parse(line[1]).doubleValue(),
-					format.parse(line[2]).doubleValue(),
-					format.parse(line[3]).doubleValue());
+				Indicators ind = new Indicators(parseDouble(line[1]),
+					parseDouble(line[2]),
+					parseDouble(line[3]));
 				result.put(LocalDate.parse(line[0], DATE_FORMAT_DMY), ind);
 			}
 		} catch (Exception e) {
@@ -235,6 +236,14 @@ public class Start {
 		}
 
 		return result;
+	}
+
+	private static double parseDouble(final String str) {
+		try {
+			return NUMBER_FORMAT.parse(str).doubleValue();
+		} catch (Exception e) {
+			return 0;
+		}
 	}
 
 	private Map<LocalDate, Double> loadRkiHospitalisierungsinzidenzNiedersachsen(final InputStream inputStream) {
