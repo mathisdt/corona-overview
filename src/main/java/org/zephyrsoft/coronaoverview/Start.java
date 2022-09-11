@@ -69,11 +69,26 @@ public class Start {
 		if (locations.isEmpty()) {
 			System.err.println("no locations given");
 		} else {
-			doWork();
+			AtomicInteger tries = new AtomicInteger();
+			while (true) {
+				try {
+					doWork();
+					break;
+				} catch (Exception e) {
+					if (tries.incrementAndGet() > 3) {
+						throw new RuntimeException(e);
+					}
+					try {
+						Thread.sleep(60_000);
+					} catch (InterruptedException ignored) {
+						// do nothing
+					}
+				}
+			}
 		}
 	}
 
-	private void doWork() {
+	private void doWork() throws IOException {
 		try (InputStream rkiFallinzidenzStream = new URL(
 			"https://www.rki.de/DE/Content/InfAZ/N/Neuartiges_Coronavirus/Daten/Fallzahlen_Inzidenz_aktualisiert.xlsx?__blob=publicationFile")
 				.openStream();
@@ -208,8 +223,6 @@ public class Start {
 
 			System.out.println(output.toString());
 
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 	}
 
