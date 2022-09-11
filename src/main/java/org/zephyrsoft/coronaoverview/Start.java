@@ -76,7 +76,8 @@ public class Start {
 					break;
 				} catch (Exception e) {
 					if (tries.incrementAndGet() > 3) {
-						throw new RuntimeException(e);
+						e.printStackTrace();
+						break;
 					}
 					try {
 						Thread.sleep(60_000);
